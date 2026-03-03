@@ -1100,8 +1100,8 @@ const Round3 = () => {
 
 const Admin = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('adminToken'));
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('admin');
+  const [password, setPassword] = useState('Harini@CSE123');
   const [activeTab, setActiveTab] = useState('teams');
   const [teams, setTeams] = useState<Team[]>([]);
   const [r1Sets, setR1Sets] = useState<any[]>([]);
