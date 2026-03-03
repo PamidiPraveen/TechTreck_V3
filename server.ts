@@ -1,5 +1,4 @@
 import express from "express";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
@@ -95,23 +94,33 @@ app.use(express.json());
 const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) return;
   try {
-    await mongoose.connect(MONGODB_URI);
+    const maskedUri = MONGODB_URI.replace(/:([^@]+)@/, ":****@");
+    console.log(`Connecting to MongoDB: ${maskedUri}`);
+    await mongoose.connect(MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s
+    });
     console.log("Connected to MongoDB Atlas");
     
     // Default admin initialization
     const adminExists = await Admin.findOne({ username: 'admin' });
     if (!adminExists) {
       await Admin.create({ username: 'admin', password: 'Harini@CSE123' });
+      console.log("Default admin created");
     }
   } catch (err) {
     console.error("MongoDB connection error:", err);
+    throw err; // Throw so middleware can catch it
   }
 };
 
 // Middleware to ensure DB connection
 app.use(async (req, res, next) => {
-  await connectDB();
-  next();
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    res.status(500).json({ error: "Database connection failed" });
+  }
 });
 
 // Static files
@@ -151,14 +160,26 @@ const authenticateToken = (req: any, res: any, next: any) => {
 };
 
 // API Routes
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "ok", 
+    db: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    env: process.env.NODE_ENV
+  });
+});
+
 app.post("/api/admin/login", async (req, res) => {
-  const { username, password } = req.body;
-  const admin = await Admin.findOne({ username, password });
-  if (admin) {
-    const token = jwt.sign({ id: admin._id, username: admin.username }, JWT_SECRET);
-    res.json({ token });
-  } else {
-    res.status(401).json({ error: "Invalid credentials" });
+  try {
+    const { username, password } = req.body;
+    const admin = await Admin.findOne({ username, password });
+    if (admin) {
+      const token = jwt.sign({ id: admin._id, username: admin.username }, JWT_SECRET);
+      res.json({ token });
+    } else {
+      res.status(401).json({ error: "Invalid credentials" });
+    }
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -392,31 +413,34 @@ app.post("/api/upload-asset", authenticateToken, upload.single("file"), (req: an
 // Export for Vercel
 export default app;
 
-if (process.env.NODE_ENV !== "production" && import.meta.url === `file://${process.argv[1]}`) {
-  const PORT = 3000;
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
-}
-
 async function startServer() {
-  await connectDB();
-  
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
+    try {
+      const { createServer: createViteServer } = await import("vite");
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+    } catch (e) {
+      console.warn("Vite not found, skipping middleware");
+    }
   } else {
-    app.use(express.static(path.join(__dirname, "dist")));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(__dirname, "dist", "index.html"));
-    });
+    // In production, serve from dist if running as a standalone server
+    const distPath = path.join(__dirname, "dist");
+    if (fs.existsSync(distPath)) {
+      app.use(express.static(distPath));
+      app.get("*", (req, res) => {
+        if (!req.path.startsWith('/api/')) {
+          res.sendFile(path.join(distPath, "index.html"));
+        }
+      });
+    }
   }
 
-  if (import.meta.url === `file://${process.argv[1]}`) {
+  const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+  if (isMainModule || process.env.NODE_ENV === 'development') {
     const PORT = 3000;
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on http://localhost:${PORT}`);
@@ -424,8 +448,5 @@ async function startServer() {
   }
 }
 
-// Only start the server if this file is run directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  startServer();
-}
+startServer();
 

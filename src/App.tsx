@@ -1122,11 +1122,12 @@ const Admin = () => {
         localStorage.setItem('adminToken', token);
         setIsLoggedIn(true);
       } else {
-        const data = await res.json();
-        alert(`Invalid credentials: ${data.error || 'Unknown error'}`);
+        const data = await res.json().catch(() => ({ error: 'Server returned an invalid response' }));
+        alert(`Login failed: ${data.error || 'Unknown error'}`);
       }
     } catch (err) {
-      alert('Login failed. Please check your connection.');
+      console.error('Login error:', err);
+      alert('Login failed. Please check your internet connection or server status.');
     }
   };
 
