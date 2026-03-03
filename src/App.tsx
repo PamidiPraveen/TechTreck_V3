@@ -243,7 +243,7 @@ const Round1 = () => {
     let timer: any;
     if (showQuestion && timeLeft > 0 && !isAnswering) {
       timer = setInterval(() => {
-        playSound('/tiktok1.mp3');
+        playSound('/public/tiktok1.mp3');
         setTimeLeft(t => t - 1);
       }, 1000);
     } else if (timeLeft === 0 && showQuestion && !isAnswering) {
@@ -272,7 +272,7 @@ const Round1 = () => {
     setSelectedBox(boxNum);
     setActiveQuestion(q);
     setShowDifficulty(true);
-    playSound('/q.mp3');
+    playSound('/public/q.mp3');
 
     setTimeout(() => {
       setShowDifficulty(false);
@@ -302,9 +302,9 @@ const Round1 = () => {
 
       if (isCorrect) {
         confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#FFFF00', '#FFFFFF'] });
-        playSound('/alright.mp3');
+        playSound('/public/alright.mp3');
       } else {
-        playSound('/fahhh.mp3');
+        playSound('/public/fahhh.mp3');
       }
 
       setTimeout(() => {
@@ -499,7 +499,7 @@ const Round2 = () => {
   useEffect(() => {
     if (isRoundStarted && isTurnStarted && timeLeft > 0 && !isAnswering && !showLeaderboard) {
       const timer = setTimeout(() => {
-        playSound('/tiktok1.mp3');
+        playSound('/public/tiktok1.mp3');
         setTimeLeft(timeLeft - 1);
       }, 1000);
       return () => clearTimeout(timer);
@@ -549,11 +549,11 @@ const Round2 = () => {
       if (isCorrect) {
         setBombEffect('correct');
         confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#00FF00', '#FFFFFF'] });
-        playSound('/alright.mp3');
+        playSound('/public/alright.mp3');
       } else {
         setBombEffect('wrong');
         confetti({ particleCount: 100, spread: 50, origin: { y: 0.6 }, colors: ['#FF0000', '#8B0000'] });
-        playSound('/fahhh.mp3');
+        playSound('/public/fahhh.mp3');
       }
 
       setTimeout(() => {
@@ -563,7 +563,7 @@ const Round2 = () => {
         if (nextTurn >= teams.length * 5 || nextTurn >= questions.length) {
           setShowLeaderboard(true);
           setCelebration(true);
-          playSound('/claps.mp3');
+          playSound('/public/claps.mp3');
           fetchTeams();
         } else {
           setCurrentTurn(nextTurn);
@@ -781,7 +781,7 @@ const Round3 = () => {
     let interval: any;
     if (isActive && timer > 0) {
       interval = setInterval(() => {
-        playSound('/tiktok1.mp3');
+        playSound('/public/tiktok1.mp3');
         setTimer(t => t - 1);
       }, 1000);
     } else if (timer === 0 && isActive) {
@@ -842,9 +842,9 @@ const Round3 = () => {
           origin: { y: 0.8 },
           colors: ['#FFFF00']
         });
-        playSound('/alright.mp3');
+        playSound('/public/alright.mp3');
       } else {
-        playSound('/fahhh.mp3');
+        playSound('/public/fahhh.mp3');
       }
     } else {
       const data = await res.json();
@@ -878,7 +878,7 @@ const Round3 = () => {
     // Store interval in window to clear if needed, though user wants it to keep going
     (window as any).winnerInterval = interval;
 
-    playSound('/claps.mp3');
+    playSound('/public/claps.mp3');
   };
 
   if (winner) {
