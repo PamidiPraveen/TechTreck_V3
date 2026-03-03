@@ -243,7 +243,7 @@ const Round1 = () => {
     let timer: any;
     if (showQuestion && timeLeft > 0 && !isAnswering) {
       timer = setInterval(() => {
-        playSound('public/tiktok1.mp3');
+        playSound('/tiktok1.mp3');
         setTimeLeft(t => t - 1);
       }, 1000);
     } else if (timeLeft === 0 && showQuestion && !isAnswering) {
@@ -272,7 +272,7 @@ const Round1 = () => {
     setSelectedBox(boxNum);
     setActiveQuestion(q);
     setShowDifficulty(true);
-    playSound('public/q.mp3');
+    playSound('/q.mp3');
 
     setTimeout(() => {
       setShowDifficulty(false);
@@ -499,7 +499,7 @@ const Round2 = () => {
   useEffect(() => {
     if (isRoundStarted && isTurnStarted && timeLeft > 0 && !isAnswering && !showLeaderboard) {
       const timer = setTimeout(() => {
-        playSound('public/tiktok1.mp3');
+        playSound('/tiktok1.mp3');
         setTimeLeft(timeLeft - 1);
       }, 1000);
       return () => clearTimeout(timer);
@@ -563,7 +563,7 @@ const Round2 = () => {
         if (nextTurn >= teams.length * 5 || nextTurn >= questions.length) {
           setShowLeaderboard(true);
           setCelebration(true);
-          playSound('public/claps.mp3');
+          playSound('/claps.mp3');
           fetchTeams();
         } else {
           setCurrentTurn(nextTurn);
@@ -781,7 +781,7 @@ const Round3 = () => {
     let interval: any;
     if (isActive && timer > 0) {
       interval = setInterval(() => {
-        playSound('public/tiktok1.mp3');
+        playSound('/tiktok1.mp3');
         setTimer(t => t - 1);
       }, 1000);
     } else if (timer === 0 && isActive) {
@@ -878,7 +878,7 @@ const Round3 = () => {
     // Store interval in window to clear if needed, though user wants it to keep going
     (window as any).winnerInterval = interval;
 
-    playSound('public/claps.mp3');
+    playSound('/claps.mp3');
   };
 
   if (winner) {
@@ -1100,8 +1100,8 @@ const Round3 = () => {
 
 const Admin = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('adminToken'));
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('Harini@CSE123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState('teams');
   const [teams, setTeams] = useState<Team[]>([]);
   const [r1Sets, setR1Sets] = useState<any[]>([]);
