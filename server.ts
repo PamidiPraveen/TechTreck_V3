@@ -124,10 +124,18 @@ app.use(async (req, res, next) => {
 });
 
 // Static files
-const uploadDir = path.join(__dirname, "public", "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+const uploadDir = process.env.NODE_ENV === "production" 
+  ? path.join("/tmp", "uploads") 
+  : path.join(__dirname, "public", "uploads");
+
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (err) {
+  console.warn("Could not create upload directory, file uploads may fail:", err);
 }
+
 app.use("/uploads", express.static(uploadDir));
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -402,12 +410,18 @@ app.post("/api/upload-asset", authenticateToken, upload.single("file"), (req: an
   const targetName = req.body.name;
   if (!targetName) return res.status(400).json({ error: "Target name required" });
   
-  const targetPath = path.join(__dirname, "public", targetName);
-  if (fs.existsSync(targetPath)) {
-    fs.unlinkSync(targetPath);
+  try {
+    const targetPath = path.join(__dirname, "public", targetName);
+    // Note: This will likely fail on Vercel as public is read-only
+    if (fs.existsSync(targetPath)) {
+      fs.unlinkSync(targetPath);
+    }
+    fs.renameSync(req.file.path, targetPath);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Asset upload failed:", err);
+    res.status(500).json({ error: "Failed to save asset. Note: Vercel filesystem is read-only." });
   }
-  fs.renameSync(req.file.path, targetPath);
-  res.json({ success: true });
 });
 
 // Export for Vercel
