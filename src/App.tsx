@@ -243,7 +243,7 @@ const Round1 = () => {
     let timer: any;
     if (showQuestion && timeLeft > 0 && !isAnswering) {
       timer = setInterval(() => {
-        playSound('/public/tiktok1.mp3');
+        playSound('/tiktok1.mp3');
         setTimeLeft(t => t - 1);
       }, 1000);
     } else if (timeLeft === 0 && showQuestion && !isAnswering) {
@@ -272,7 +272,7 @@ const Round1 = () => {
     setSelectedBox(boxNum);
     setActiveQuestion(q);
     setShowDifficulty(true);
-    playSound('/public/q.mp3');
+    playSound('/q.mp3');
 
     setTimeout(() => {
       setShowDifficulty(false);
@@ -302,9 +302,9 @@ const Round1 = () => {
 
       if (isCorrect) {
         confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#FFFF00', '#FFFFFF'] });
-        playSound('/public/alright.mp3');
+        playSound('/alright.mp3');
       } else {
-        playSound('/public/fahhh.mp3');
+        playSound('/fahhh.mp3');
       }
 
       setTimeout(() => {
@@ -406,14 +406,14 @@ const Round1 = () => {
           <h2 className="text-5xl font-display font-black text-white">{activeTeam?.name}</h2>
         </div>
 
-        <div className="grid grid-cols-4 gap-6 max-w-2xl w-full">
-          {Array.from({ length: 16 }).map((_, i) => {
-            const boxNum = i + 1;
+        <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4 max-w-6xl w-full">
+          {questions.sort((a, b) => a.box_number - b.box_number).map((q) => {
+            const boxNum = q.box_number;
             const isOpened = allOpenedBoxes.includes(boxNum);
             const isSelected = selectedBox === boxNum;
             return (
               <motion.button
-                key={boxNum}
+                key={q.id}
                 whileHover={!isOpened ? { scale: 1.05, rotate: 2 } : {}}
                 whileTap={!isOpened ? { scale: 0.95 } : {}}
                 onClick={() => handleBoxClick(boxNum)}
@@ -499,7 +499,7 @@ const Round2 = () => {
   useEffect(() => {
     if (isRoundStarted && isTurnStarted && timeLeft > 0 && !isAnswering && !showLeaderboard) {
       const timer = setTimeout(() => {
-        playSound('/public/tiktok1.mp3');
+        playSound('/tiktok1.mp3');
         setTimeLeft(timeLeft - 1);
       }, 1000);
       return () => clearTimeout(timer);
@@ -549,11 +549,11 @@ const Round2 = () => {
       if (isCorrect) {
         setBombEffect('correct');
         confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#00FF00', '#FFFFFF'] });
-        playSound('/public/alright.mp3');
+        playSound('/alright.mp3');
       } else {
         setBombEffect('wrong');
         confetti({ particleCount: 100, spread: 50, origin: { y: 0.6 }, colors: ['#FF0000', '#8B0000'] });
-        playSound('/public/fahhh.mp3');
+        playSound('/fahhh.mp3');
       }
 
       setTimeout(() => {
@@ -563,7 +563,7 @@ const Round2 = () => {
         if (nextTurn >= teams.length * 5 || nextTurn >= questions.length) {
           setShowLeaderboard(true);
           setCelebration(true);
-          playSound('/public/claps.mp3');
+          playSound('/claps.mp3');
           fetchTeams();
         } else {
           setCurrentTurn(nextTurn);
@@ -781,7 +781,7 @@ const Round3 = () => {
     let interval: any;
     if (isActive && timer > 0) {
       interval = setInterval(() => {
-        playSound('/public/tiktok1.mp3');
+        playSound('/tiktok1.mp3');
         setTimer(t => t - 1);
       }, 1000);
     } else if (timer === 0 && isActive) {
@@ -842,9 +842,9 @@ const Round3 = () => {
           origin: { y: 0.8 },
           colors: ['#FFFF00']
         });
-        playSound('/public/alright.mp3');
+        playSound('/alright.mp3');
       } else {
-        playSound('/public/fahhh.mp3');
+        playSound('/fahhh.mp3');
       }
     } else {
       const data = await res.json();
@@ -878,7 +878,7 @@ const Round3 = () => {
     // Store interval in window to clear if needed, though user wants it to keep going
     (window as any).winnerInterval = interval;
 
-    playSound('/public/claps.mp3');
+    playSound('/claps.mp3');
   };
 
   if (winner) {
