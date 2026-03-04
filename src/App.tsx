@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useMotionValue, useSpring } from 'motion/react';
 import { 
   Trophy, 
   Users, 
@@ -2063,25 +2063,37 @@ const RouteWatcher = () => {
 };
 
 export default function App() {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const springX = useSpring(mouseX, { stiffness: 50, damping: 20 });
+  const springY = useSpring(mouseY, { stiffness: 50, damping: 20 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseX.set(e.clientX - 200);
+      mouseY.set(e.clientY - 200);
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [mouseX, mouseY]);
+
   return (
     <Router>
       <RouteWatcher />
       <div className="animated-bg">
         <motion.div 
-          animate={{
-            x: [0, 100, 0],
-            y: [0, 50, 0],
-          }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="glow-orb bg-neon-cyan top-[-10%] left-[-10%]" 
+          style={{ x: springX, y: springY }}
+          className="glow-orb bg-neon-cyan opacity-20" 
         />
         <motion.div 
-          animate={{
-            x: [0, -100, 0],
-            y: [0, -50, 0],
+          style={{ 
+            x: springX, 
+            y: springY,
+            translateX: '50vw',
+            translateY: '50vh'
           }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          className="glow-orb bg-neon-orange bottom-[-10%] right-[-10%]" 
+          className="glow-orb bg-neon-orange opacity-20" 
         />
       </div>
       <div className="relative z-10">

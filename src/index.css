@@ -86,12 +86,12 @@
   width: 200%;
   height: 200%;
   background-image: 
-    linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(0, 243, 255, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 243, 255, 0.12) 1px, transparent 1px);
   background-size: 60px 60px;
   transform: perspective(500px) rotateX(60deg);
   animation: grid-move 20s linear infinite;
-  mask-image: radial-gradient(circle at 50% 50%, black, transparent 80%);
+  mask-image: radial-gradient(circle at 50% 50%, black, transparent 95%);
 }
 
 .animated-bg::after {
