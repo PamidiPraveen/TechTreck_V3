@@ -80,11 +80,13 @@ interface MysteryBoxQuestion {
   box_number: number;
   difficulty: 'Easy' | 'Medium' | 'Hard';
   question_text: string;
+  correct_answer?: string;
 }
 
 interface QuestionSet {
   id: string;
   name: string;
+  is_used?: boolean;
 }
 
 // --- Components ---
@@ -132,10 +134,10 @@ const Home = () => {
           <Award size={16} />
           TECHTRECK 2026 – Technical Quiz Battle
         </div>
-        <h1 className="text-6xl md:text-8xl font-display font-black mb-6 tracking-tighter bg-gradient-to-r from-neon-yellow via-neon-orange to-neon-red bg-clip-text text-transparent">
+        <h1 className="text-4xl md:text-8xl font-display font-black mb-6 tracking-tighter bg-gradient-to-r from-neon-yellow via-neon-orange to-neon-red bg-clip-text text-transparent">
           TECHTRECK
         </h1>
-        <p className="text-xl md:text-2xl text-white/70 mb-12 font-light max-w-2xl mx-auto leading-relaxed">
+        <p className="text-lg md:text-2xl text-white/70 mb-12 font-light max-w-2xl mx-auto leading-relaxed px-4">
           The ultimate technical quiz battleground organized by the <span className="text-neon-yellow font-bold">CSE Department</span> of St Anns College of Engineering & Technology.
         </p>
 
@@ -218,6 +220,7 @@ const Round1 = () => {
   const [showQuestion, setShowQuestion] = useState(false);
   const [timeLeft, setTimeLeft] = useState(30);
   const [isAnswering, setIsAnswering] = useState(false);
+  const [showCorrectAnswer, setShowCorrectAnswer] = useState(false);
   const [isRoundStarted, setIsRoundStarted] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showTimeUp, setShowTimeUp] = useState(false);
@@ -226,6 +229,7 @@ const Round1 = () => {
     const res = await fetch('/api/teams');
     const data = await res.json();
     setTeams(data);
+    return data;
   };
 
   const fetchQuestions = async () => {
@@ -254,12 +258,10 @@ const Round1 = () => {
 
   const playSound = (url: string) => {
     const audio = new Audio(url);
-    audio.play().catch(err => {
-      console.warn("Audio playback blocked or failed:", err);
-      // Try relative path if absolute fails
+    audio.play().catch(() => {
       if (url.startsWith('/')) {
         const relativeAudio = new Audio(url.substring(1));
-        relativeAudio.play().catch(e => console.error("Relative audio also failed:", e));
+        relativeAudio.play().catch(() => {});
       }
     });
   };
@@ -307,16 +309,28 @@ const Round1 = () => {
         playSound('/fahhh.mp3');
       }
 
+      setShowCorrectAnswer(true);
+
       setTimeout(() => {
         setIsAnswering(false);
+        setShowCorrectAnswer(false);
         setShowQuestion(false);
         setSelectedBox(null);
         setActiveQuestion(null);
         
-        const nextTeamIdx = (currentTeamIdx + 1) % teams.length;
-        setCurrentTeamIdx(nextTeamIdx);
-        fetchTeams();
-      }, 2000);
+        // Check if round is finished (each team answered 5 questions)
+        fetchTeams().then((updatedTeams) => {
+          const teamsToUse = updatedTeams || teams;
+          const totalOpened = teamsToUse.reduce((acc: number, t: Team) => acc + (t.round1_mystery_boxes_opened?.length || 0), 0);
+          
+          if (totalOpened >= teams.length * 5) {
+            setShowLeaderboard(true);
+          } else {
+            const nextTeamIdx = (currentTeamIdx + 1) % teams.length;
+            setCurrentTeamIdx(nextTeamIdx);
+          }
+        });
+      }, 4000);
     } catch (err) {
       console.error(err);
       setIsAnswering(false);
@@ -335,15 +349,16 @@ const Round1 = () => {
         <Link to="/" className="absolute top-8 left-8 text-white/50 hover:text-white flex items-center gap-2 z-30">
           <ChevronRight className="rotate-180" size={16} /> Home
         </Link>
-        <h2 className="text-5xl font-display font-bold mb-12 text-neon-yellow neon-text">Round 1 Results</h2>
-        <div className="w-full max-w-3xl space-y-4">
+        <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 text-neon-yellow neon-text">Congratulations!</h2>
+        <h3 className="text-xl md:text-2xl font-display text-white/50 mb-8 md:mb-12 uppercase tracking-widest">Round 1 Completed</h3>
+        <div className="w-full max-w-3xl space-y-4 px-4">
           {teams.sort((a, b) => b.round1_score - a.round1_score).map((team, idx) => (
-            <div key={team.id} className="flex justify-between items-center p-6 glass border border-white/10 rounded-2xl">
-              <div className="flex items-center gap-6">
-                <span className="text-3xl font-display text-white/20">#{idx + 1}</span>
-                <h3 className="font-bold text-2xl text-white">{team.name}</h3>
+            <div key={team.id} className="flex justify-between items-center p-4 md:p-6 glass border border-white/10 rounded-2xl">
+              <div className="flex items-center gap-4 md:gap-6">
+                <span className="text-2xl md:text-3xl font-display text-white/20">#{idx + 1}</span>
+                <h3 className="font-bold text-xl md:text-2xl text-white">{team.name}</h3>
               </div>
-              <div className="text-4xl font-display font-bold text-neon-yellow">{team.round1_score}</div>
+              <div className="text-2xl md:text-4xl font-display font-bold text-neon-yellow">{team.round1_score}</div>
             </div>
           ))}
         </div>
@@ -361,20 +376,20 @@ const Round1 = () => {
         <Link to="/" className="absolute top-8 left-8 text-white/50 hover:text-white flex items-center gap-2">
           <ChevronRight className="rotate-180" size={16} /> Home
         </Link>
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center glass p-16 border-neon-yellow/30 rounded-3xl max-w-2xl">
-          <ShieldCheck size={80} className="text-neon-yellow mx-auto mb-8 animate-bounce" />
-          <h1 className="text-6xl font-display font-black mb-6 text-neon-yellow neon-text">Round 1</h1>
-          <h2 className="text-2xl text-white/70 mb-12 uppercase tracking-widest">Mystery Box</h2>
-          <div className="text-left space-y-4 mb-12 bg-white/5 p-8 rounded-2xl border border-white/10">
-            <h3 className="text-neon-yellow font-display text-xl border-b border-neon-yellow/20 pb-2">Rules</h3>
-            <ul className="text-white/60 space-y-3 list-disc list-inside">
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center glass p-8 md:p-16 border-neon-yellow/30 rounded-3xl max-w-2xl w-full">
+          <ShieldCheck size={64} className="text-neon-yellow mx-auto mb-6 md:mb-8 animate-bounce" />
+          <h1 className="text-4xl md:text-6xl font-display font-black mb-4 md:mb-6 text-neon-yellow neon-text">Round 1</h1>
+          <h2 className="text-xl md:text-2xl text-white/70 mb-8 md:mb-12 uppercase tracking-widest">Mystery Box</h2>
+          <div className="text-left space-y-3 md:space-y-4 mb-8 md:mb-12 bg-white/5 p-6 md:p-8 rounded-2xl border border-white/10">
+            <h3 className="text-neon-yellow font-display text-lg md:text-xl border-b border-neon-yellow/20 pb-2">Rules</h3>
+            <ul className="text-white/60 space-y-2 md:space-y-3 text-sm md:text-base list-disc list-inside">
               <li>Pick a box number to reveal a question.</li>
               <li>Difficulty levels: Easy (+10), Medium (+15), Hard (+20).</li>
               <li>No negative marking.</li>
               <li>Timer: 15 seconds.</li>
             </ul>
           </div>
-          <Button onClick={() => setIsRoundStarted(true)} className="text-3xl px-20 py-10">START ROUND 1</Button>
+          <Button onClick={() => setIsRoundStarted(true)} className="text-xl md:text-3xl px-10 py-5 md:px-20 md:py-10">START ROUND 1</Button>
         </motion.div>
       </div>
     );
@@ -397,13 +412,22 @@ const Round1 = () => {
             </div>
           ))}
         </div>
-        <Button variant="outline" className="w-full mt-8" onClick={() => setShowLeaderboard(true)}>Show Leaderboard</Button>
       </div>
 
       <div className="flex-1 p-8 flex flex-col items-center justify-center relative">
-        <div className="w-full max-w-4xl text-center mb-12">
-          <div className="text-neon-yellow font-display text-sm uppercase tracking-[0.3em] mb-2">Current Team</div>
-          <h2 className="text-5xl font-display font-black text-white">{activeTeam?.name}</h2>
+        <div className="w-full max-w-4xl text-center mb-8 md:mb-12">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-8 md:mb-12 gap-6">
+            <div className="text-center md:text-left">
+              <div className="text-neon-yellow font-display text-xs md:text-sm uppercase tracking-[0.3em] mb-2">Current Team</div>
+              <h2 className="text-3xl md:text-5xl font-display font-black text-white">{activeTeam?.name}</h2>
+            </div>
+            <div className="text-center md:text-right">
+              <div className="text-white/30 font-display text-xs md:text-sm uppercase tracking-widest mb-2">Round Progress</div>
+              <div className="text-xl md:text-3xl font-display text-white">
+                Turn {allOpenedBoxes.length + 1} <span className="text-white/20">/ {teams.length * 5}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4 max-w-6xl w-full">
@@ -441,21 +465,28 @@ const Round1 = () => {
           )}
 
           {showQuestion && activeQuestion && (
-            <motion.div initial={{ opacity: 0, y: 100 }} animate={{ opacity: 1, y: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black backdrop-blur-xl p-12">
-              <div className="max-w-5xl w-full text-center space-y-12">
+            <motion.div initial={{ opacity: 0, y: 100 }} animate={{ opacity: 1, y: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black backdrop-blur-xl p-4 md:p-12">
+              <div className="max-w-5xl w-full text-center space-y-6 md:space-y-12">
                 <div className="flex justify-between items-center">
                   <div className="text-left">
-                    <div className="text-neon-yellow font-display text-sm uppercase tracking-widest mb-2">Team Answering</div>
-                    <h3 className="text-4xl font-display font-bold text-white">{activeTeam?.name}</h3>
+                    <div className="text-neon-yellow font-display text-[10px] md:text-sm uppercase tracking-widest mb-1 md:mb-2">Team Answering</div>
+                    <h3 className="text-2xl md:text-4xl font-display font-bold text-white">{activeTeam?.name}</h3>
                   </div>
-                  <div className={cn("w-24 h-24 rounded-full border-4 flex items-center justify-center text-4xl font-display", timeLeft < 10 ? "border-red-500 text-red-500 animate-pulse" : "border-neon-yellow text-neon-yellow")}>{timeLeft}</div>
+                  <div className={cn("w-16 h-16 md:w-24 md:h-24 rounded-full border-2 md:border-4 flex items-center justify-center text-2xl md:text-4xl font-display", timeLeft < 10 ? "border-red-500 text-red-500 animate-pulse" : "border-neon-yellow text-neon-yellow")}>{timeLeft}</div>
                 </div>
                 
-                <h2 className="text-6xl font-medium leading-tight text-white">{activeQuestion.question_text}</h2>
+                <h2 className="text-3xl md:text-6xl font-medium leading-tight text-white">{activeQuestion.question_text}</h2>
                 
-                <div className="flex gap-8 justify-center pt-12">
-                  <Button onClick={() => handleAnswer(true)} className="bg-green-500 hover:bg-green-600 text-white px-12 py-6 text-2xl">CORRECT (+{activeQuestion.difficulty === 'Easy' ? 10 : activeQuestion.difficulty === 'Medium' ? 15 : 20})</Button>
-                  <Button onClick={() => handleAnswer(false)} className="bg-red-500 hover:bg-red-600 text-white px-12 py-6 text-2xl">WRONG (0)</Button>
+                {showCorrectAnswer && activeQuestion.correct_answer && (
+                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="p-6 bg-white/10 rounded-2xl border border-neon-yellow/30">
+                    <div className="text-neon-yellow text-xs uppercase tracking-widest mb-2">Correct Answer</div>
+                    <div className="text-2xl md:text-4xl font-bold text-white">{activeQuestion.correct_answer}</div>
+                  </motion.div>
+                )}
+
+                <div className="flex flex-col md:flex-row gap-4 md:gap-8 justify-center pt-6 md:pt-12">
+                  <Button onClick={() => handleAnswer(true)} className="bg-green-500 hover:bg-green-600 text-white px-8 py-4 md:px-12 md:py-6 text-xl md:text-2xl">CORRECT (+{activeQuestion.difficulty === 'Easy' ? 10 : activeQuestion.difficulty === 'Medium' ? 15 : 20})</Button>
+                  <Button onClick={() => handleAnswer(false)} className="bg-red-500 hover:bg-red-600 text-white px-8 py-4 md:px-12 md:py-6 text-xl md:text-2xl">WRONG (0)</Button>
                 </div>
               </div>
             </motion.div>
@@ -510,12 +541,10 @@ const Round2 = () => {
 
   const playSound = (url: string) => {
     const audio = new Audio(url);
-    audio.play().catch(err => {
-      console.warn("Audio playback blocked or failed:", err);
-      // Try relative path if absolute fails
+    audio.play().catch(() => {
       if (url.startsWith('/')) {
         const relativeAudio = new Audio(url.substring(1));
-        relativeAudio.play().catch(e => console.error("Relative audio also failed:", e));
+        relativeAudio.play().catch(() => {});
       }
     });
   };
@@ -588,30 +617,30 @@ const Round2 = () => {
           <ChevronRight className="rotate-180" size={16} /> Home
         </Link>
         {celebration && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="absolute top-10 text-center z-20">
-            <h1 className="text-6xl font-display font-black text-neon-cyan neon-text mb-2">ROUND 2 COMPLETE!</h1>
-            <p className="text-white/60 uppercase tracking-[0.5em]">Scores are saved. Proceed to Round 3.</p>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="absolute top-10 text-center z-20 px-4">
+            <h1 className="text-3xl md:text-6xl font-display font-black text-neon-cyan neon-text mb-2">ROUND 2 COMPLETE!</h1>
+            <p className="text-xs md:text-sm text-white/60 uppercase tracking-[0.3em] md:tracking-[0.5em]">Scores are saved. Proceed to Round 3.</p>
           </motion.div>
         )}
         
-        <h2 className="text-5xl font-display font-bold mb-12 text-neon-cyan neon-text mt-24">Round 2 Results</h2>
-        <div className="w-full max-w-3xl space-y-4 relative z-10">
+        <h2 className="text-3xl md:text-5xl font-display font-bold mb-8 md:mb-12 text-neon-cyan neon-text mt-24">Round 2 Results</h2>
+        <div className="w-full max-w-3xl space-y-4 relative z-10 px-4">
           {teams.sort((a, b) => (b.round1_score + b.round2_score) - (a.round1_score + a.round2_score)).map((team, idx) => (
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.1 }}
               key={team.id} 
-              className="flex justify-between items-center p-6 glass border border-white/10 rounded-2xl"
+              className="flex justify-between items-center p-4 md:p-6 glass border border-white/10 rounded-2xl"
             >
-              <div className="flex items-center gap-6">
-                <span className="text-3xl font-display text-white/20">#{idx + 1}</span>
+              <div className="flex items-center gap-4 md:gap-6">
+                <span className="text-2xl md:text-3xl font-display text-white/20">#{idx + 1}</span>
                 <div>
-                  <h3 className="font-bold text-2xl text-white">{team.name}</h3>
-                  <p className="text-sm text-white/40">{team.member1}, {team.member2}, {team.member3}</p>
+                  <h3 className="font-bold text-xl md:text-2xl text-white">{team.name}</h3>
+                  <p className="text-[10px] md:text-sm text-white/40">{team.member1}, {team.member2}, {team.member3}</p>
                 </div>
               </div>
-              <div className="text-4xl font-display font-bold text-neon-cyan">{team.round1_score + team.round2_score}</div>
+              <div className="text-2xl md:text-4xl font-display font-bold text-neon-cyan">{team.round1_score + team.round2_score}</div>
             </motion.div>
           ))}
         </div>
@@ -629,20 +658,20 @@ const Round2 = () => {
         <Link to="/" className="absolute top-8 left-8 text-white/50 hover:text-white flex items-center gap-2">
           <ChevronRight className="rotate-180" size={16} /> Home
         </Link>
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center glass p-16 border-neon-cyan/30 rounded-3xl max-w-2xl">
-          <Zap size={80} className="text-neon-cyan mx-auto mb-8 animate-pulse" />
-          <h1 className="text-6xl font-display font-black mb-6 text-neon-cyan neon-text">Round 2</h1>
-          <h2 className="text-2xl text-white/70 mb-12 uppercase tracking-widest">Visual Challenge</h2>
-          <div className="text-left space-y-4 mb-12 bg-white/5 p-8 rounded-2xl border border-white/10">
-            <h3 className="text-neon-cyan font-display text-xl border-b border-neon-cyan/20 pb-2">Rules</h3>
-            <ul className="text-white/60 space-y-3 list-disc list-inside">
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center glass p-8 md:p-16 border-neon-cyan/30 rounded-3xl max-w-2xl w-full">
+          <Zap size={64} className="text-neon-cyan mx-auto mb-6 md:mb-8 animate-pulse" />
+          <h1 className="text-4xl md:text-6xl font-display font-black mb-4 md:mb-6 text-neon-cyan neon-text">Round 2</h1>
+          <h2 className="text-xl md:text-2xl text-white/70 mb-8 md:mb-12 uppercase tracking-widest">Visual Challenge</h2>
+          <div className="text-left space-y-3 md:space-y-4 mb-8 md:mb-12 bg-white/5 p-6 md:p-8 rounded-2xl border border-white/10">
+            <h3 className="text-neon-cyan font-display text-lg md:text-xl border-b border-neon-cyan/20 pb-2">Rules</h3>
+            <ul className="text-white/60 space-y-2 md:space-y-3 text-sm md:text-base list-disc list-inside">
               <li>Turn-based visual quiz.</li>
               <li>Each team answers <span className="text-white font-bold">5 questions</span>.</li>
               <li>Timer: <span className="text-white font-bold">15 seconds</span> per question.</li>
               <li>Scoring: <span className="text-green-400 font-bold">+10</span> for correct, <span className="text-white font-bold">0</span> for wrong.</li>
             </ul>
           </div>
-          <Button onClick={() => setIsRoundStarted(true)} className="text-3xl px-20 py-10 rounded-2xl shadow-[0_0_40px_rgba(0,243,255,0.3)] hover:shadow-[0_0_60px_rgba(0,243,255,0.5)]">START ROUND 2</Button>
+          <Button onClick={() => setIsRoundStarted(true)} className="text-xl md:text-3xl px-10 py-5 md:px-20 md:py-10 rounded-2xl shadow-[0_0_40px_rgba(0,243,255,0.3)] hover:shadow-[0_0_60px_rgba(0,243,255,0.5)]">START ROUND 2</Button>
         </motion.div>
       </div>
     );
@@ -673,18 +702,18 @@ const Round2 = () => {
           )}
         </AnimatePresence>
         <div className="w-full max-w-4xl relative z-10">
-          <div className="flex justify-between items-center mb-12">
-            <div>
-              <div className="text-neon-cyan font-display text-sm uppercase tracking-[0.3em] mb-2">Team Turn</div>
-              <h2 className="text-5xl font-display font-black text-white">{activeTeam?.name}</h2>
+          <div className="flex flex-col md:flex-row justify-between items-center mb-8 md:mb-12 gap-6">
+            <div className="text-center md:text-left">
+              <div className="text-neon-cyan font-display text-xs md:text-sm uppercase tracking-[0.3em] mb-2">Team Turn</div>
+              <h2 className="text-3xl md:text-5xl font-display font-black text-white">{activeTeam?.name}</h2>
             </div>
-            <div className="flex flex-col items-center">
-              <div className={cn("w-24 h-24 rounded-full border-4 flex items-center justify-center font-display text-4xl transition-all shadow-[0_0_20px_rgba(0,0,0,0.5)]", timeLeft < 5 ? "border-red-500 text-red-500 animate-bounce bg-red-500/10" : "border-neon-cyan text-neon-cyan bg-neon-cyan/10")}>{timeLeft}</div>
+            <div className="flex flex-col items-center order-first md:order-none">
+              <div className={cn("w-16 h-16 md:w-24 md:h-24 rounded-full border-2 md:border-4 flex items-center justify-center font-display text-2xl md:text-4xl transition-all shadow-[0_0_20px_rgba(0,0,0,0.5)]", timeLeft < 5 ? "border-red-500 text-red-500 animate-bounce bg-red-500/10" : "border-neon-cyan text-neon-cyan bg-neon-cyan/10")}>{timeLeft}</div>
               <div className="text-[10px] text-white/30 uppercase tracking-widest mt-2 font-bold">Seconds Left</div>
             </div>
-            <div className="text-right">
-              <div className="text-white/30 font-display text-sm uppercase tracking-widest mb-2">Round Progress</div>
-              <div className="text-3xl font-display text-white">Turn {currentTurn + 1} <span className="text-white/20">/ {teams.length * 5}</span></div>
+            <div className="text-center md:text-right">
+              <div className="text-white/30 font-display text-xs md:text-sm uppercase tracking-widest mb-2">Round Progress</div>
+              <div className="text-xl md:text-3xl font-display text-white">Turn {currentTurn + 1} <span className="text-white/20">/ {teams.length * 5}</span></div>
             </div>
           </div>
           <AnimatePresence mode="wait">
@@ -696,16 +725,16 @@ const Round2 = () => {
               </motion.div>
             ) : currentQuestion ? (
               <motion.div key={currentQuestion.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="space-y-8">
-                <Card className="p-10 border-white/10 bg-white/5 backdrop-blur-xl">
-                  {currentQuestion.image_url && <img src={currentQuestion.image_url} alt="Question" className="w-full max-h-64 object-contain mb-8 rounded-2xl bg-black/40 p-4" />}
-                  <h3 className="text-3xl font-medium leading-tight text-white">{currentQuestion.question_text}</h3>
+                <Card className="p-6 md:p-10 border-white/10 bg-white/5 backdrop-blur-xl">
+                  {currentQuestion.image_url && <img src={currentQuestion.image_url} alt="Question" className="w-full max-h-48 md:max-h-64 object-contain mb-6 md:mb-8 rounded-2xl bg-black/40 p-4" />}
+                  <h3 className="text-xl md:text-3xl font-medium leading-tight text-white">{currentQuestion.question_text}</h3>
                 </Card>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   {[1, 2, 3, 4].map(idx => (
-                    <button key={idx} disabled={isAnswering} onClick={() => handleAnswer(idx)} className={cn("p-8 rounded-2xl border-2 text-left transition-all relative group overflow-hidden", "border-white/10 bg-white/5 hover:border-neon-cyan/50 hover:bg-neon-cyan/5", isAnswering && currentQuestion.correct_option === idx && "border-green-500 bg-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.2)]", isAnswering && currentQuestion.correct_option !== idx && "opacity-40 grayscale")}>
-                      <div className="flex items-center gap-4">
-                        <span className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-neon-cyan font-display text-xl group-hover:bg-neon-cyan group-hover:text-black transition-colors">{String.fromCharCode(64 + idx)}</span>
-                        <span className="text-xl text-white/90">{(currentQuestion as any)[`option${idx}`]}</span>
+                    <button key={idx} disabled={isAnswering} onClick={() => handleAnswer(idx)} className={cn("p-4 md:p-8 rounded-2xl border-2 text-left transition-all relative group overflow-hidden", "border-white/10 bg-white/5 hover:border-neon-cyan/50 hover:bg-neon-cyan/5", isAnswering && currentQuestion.correct_option === idx && "border-green-500 bg-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.2)]", isAnswering && currentQuestion.correct_option !== idx && "opacity-40 grayscale")}>
+                      <div className="flex items-center gap-3 md:gap-4">
+                        <span className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-white/5 flex items-center justify-center text-neon-cyan font-display text-lg md:text-xl group-hover:bg-neon-cyan group-hover:text-black transition-colors">{String.fromCharCode(64 + idx)}</span>
+                        <span className="text-lg md:text-xl text-white/90">{(currentQuestion as any)[`option${idx}`]}</span>
                       </div>
                     </button>
                   ))}
@@ -797,13 +826,21 @@ const Round3 = () => {
   }, [isActive, timer]);
 
   const startRapidFire = async (setId: string) => {
-    const res = await fetch(`/api/round3/questions/${setId}`);
-    const data = await res.json();
-    setQuestions(data);
-    setSelectedSet(setId);
-    setCurrentQIndex(0);
-    setTimer(60);
-    setIsActive(true);
+    try {
+      // Mark set as used
+      await fetch(`/api/round3/sets/${setId}/use`, { method: 'POST' });
+      fetchSets();
+
+      const res = await fetch(`/api/round3/questions/${setId}`);
+      const data = await res.json();
+      setQuestions(data);
+      setSelectedSet(setId);
+      setCurrentQIndex(0);
+      setTimer(60);
+      setIsActive(true);
+    } catch (err) {
+      console.error("Error starting rapid fire:", err);
+    }
   };
 
   const randomizeSet = () => {
@@ -814,12 +851,10 @@ const Round3 = () => {
 
   const playSound = (url: string) => {
     const audio = new Audio(url);
-    audio.play().catch(err => {
-      console.warn("Audio playback blocked or failed:", err);
-      // Try relative path if absolute fails
+    audio.play().catch(() => {
       if (url.startsWith('/')) {
         const relativeAudio = new Audio(url.substring(1));
-        relativeAudio.play().catch(e => console.error("Relative audio also failed:", e));
+        relativeAudio.play().catch(() => {});
       }
     });
   };
@@ -895,13 +930,13 @@ const Round3 = () => {
           <div className="absolute -inset-20 bg-neon-yellow/20 blur-[100px] rounded-full animate-pulse pointer-events-none"></div>
           <Trophy size={120} className="text-yellow-400 mx-auto mb-8 drop-shadow-[0_0_30px_rgba(250,204,21,0.5)]" />
           <h2 className="text-4xl font-display text-white/50 uppercase tracking-[0.5em] mb-4">Winner</h2>
-          <h1 className="text-7xl md:text-9xl font-display font-black text-white mb-8 neon-text">
+          <h1 className="text-5xl md:text-9xl font-display font-black text-white mb-8 neon-text">
             {winner.name}
           </h1>
-          <div className="text-2xl font-display text-neon-yellow">
+          <div className="text-xl md:text-2xl font-display text-neon-yellow">
             Final Score: {winner.round1_score + winner.round2_score + winner.round3_score}
           </div>
-          <div className="flex gap-4 justify-center mt-12 relative z-[10001]">
+          <div className="flex flex-col md:flex-row gap-4 justify-center mt-12 relative z-[10001]">
             <button 
               onClick={() => {
                 if ((window as any).winnerInterval) clearInterval((window as any).winnerInterval);
@@ -959,14 +994,6 @@ const Round3 = () => {
                 <span className="font-bold">{team.name}</span>
                 <span className="font-display text-neon-orange text-xl">{team.round1_score + team.round2_score + team.round3_score}</span>
               </div>
-              <div className="flex gap-2">
-                <button 
-                  onClick={(e) => { e.stopPropagation(); updateScore(team.id, 10); }}
-                  className="w-full py-1 bg-green-500/20 hover:bg-green-500/40 text-green-500 rounded border border-green-500/30 text-xs font-bold"
-                >
-                  +10
-                </button>
-              </div>
             </div>
           ))}
         </div>
@@ -989,10 +1016,10 @@ const Round3 = () => {
             <div className="w-24 h-24 bg-neon-orange/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-neon-orange/20">
               <Zap size={48} className="text-neon-orange" />
             </div>
-            <h2 className="text-5xl font-display font-bold mb-4 text-neon-orange">{activeTeam.name}</h2>
+            <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 text-neon-orange">{activeTeam.name}</h2>
             <div className="text-left max-w-md mx-auto mb-12 space-y-4">
-              <h3 className="text-neon-orange font-display text-xl border-b border-neon-orange/20 pb-2">Rapid Fire Rules</h3>
-              <ul className="text-white/70 space-y-2 list-disc list-inside">
+              <h3 className="text-neon-orange font-display text-lg md:text-xl border-b border-neon-orange/20 pb-2">Rapid Fire Rules</h3>
+              <ul className="text-white/70 space-y-2 text-sm md:text-base list-disc list-inside">
                 <li>Answer as many questions as possible in <span className="text-white font-bold">60 seconds</span>.</li>
                 <li>Questions will be presented one after another.</li>
                 <li><span className="text-green-400 font-bold">+10 points</span> for each correct answer.</li>
@@ -1003,35 +1030,47 @@ const Round3 = () => {
             <Button 
               onClick={() => setIsTeamReady(true)} 
               variant="secondary"
-              className="text-3xl px-16 py-8 rounded-2xl shadow-[0_0_30px_rgba(255,69,0,0.3)] hover:shadow-[0_0_50px_rgba(255,69,0,0.5)]"
+              className="text-xl md:text-3xl px-8 py-4 md:px-16 md:py-8 rounded-2xl shadow-[0_0_30px_rgba(255,69,0,0.3)] hover:shadow-[0_0_50px_rgba(255,69,0,0.5)]"
             >
               START RAPID FIRE
             </Button>
           </motion.div>
         ) : !selectedSet ? (
-          <div className="w-full max-w-2xl">
-            <h2 className="text-3xl font-display font-bold mb-8 text-center">Select Question Set for {activeTeam.name}</h2>
+          <div className="w-full max-w-2xl px-4">
+            <h2 className="text-2xl md:text-3xl font-display font-bold mb-8 text-center">Select Question Set for {activeTeam.name}</h2>
             <div className="flex flex-col gap-6">
-              <Button onClick={randomizeSet} className="text-2xl py-8">Randomly Select Set</Button>
+              <Button onClick={randomizeSet} className="text-xl md:text-2xl py-6 md:py-8">Randomly Select Set</Button>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {sets.map(set => (
                   <button
                     key={set.id}
+                    disabled={set.is_used}
                     onClick={() => startRapidFire(set.id)}
-                    className="p-8 rounded-2xl border-2 border-white/10 bg-white/5 hover:border-neon-orange hover:bg-neon-orange/10 transition-all text-center group"
+                    className={cn(
+                      "p-6 md:p-8 rounded-2xl border-2 transition-all text-center group",
+                      set.is_used 
+                        ? "border-white/5 bg-white/5 opacity-40 cursor-not-allowed" 
+                        : "border-white/10 bg-white/5 hover:border-neon-orange hover:bg-neon-orange/10"
+                    )}
                   >
-                    <div className="text-2xl font-display font-bold group-hover:scale-110 transition-transform">{set.name}</div>
+                    <div className={cn(
+                      "text-xl md:text-2xl font-display font-bold transition-transform",
+                      !set.is_used && "group-hover:scale-110"
+                    )}>
+                      {set.name}
+                      {set.is_used && <div className="text-[10px] uppercase tracking-widest mt-1 opacity-50">Already Used</div>}
+                    </div>
                   </button>
                 ))}
               </div>
             </div>
           </div>
         ) : (
-          <div className="w-full max-w-3xl">
-            <div className="flex justify-between items-center mb-12">
-              <div className="text-2xl font-display text-neon-orange">{activeTeam.name}</div>
+          <div className="w-full max-w-3xl px-4">
+            <div className="flex justify-between items-center mb-8 md:mb-12">
+              <div className="text-xl md:text-2xl font-display text-neon-orange">{activeTeam.name}</div>
               <div className={cn(
-                "text-5xl font-display",
+                "text-3xl md:text-5xl font-display",
                 timer < 20 ? "text-red-500 animate-pulse" : "text-white"
               )}>
                 {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
@@ -1046,21 +1085,27 @@ const Round3 = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                 >
-                  <Card className="min-h-[300px] flex flex-col items-center justify-center text-center">
+                  <Card className="min-h-[250px] md:min-h-[300px] flex flex-col items-center justify-center text-center p-6">
                     {questions[currentQIndex].image_url && (
-                      <img src={questions[currentQIndex].image_url} className="max-h-48 mb-6 rounded" />
+                      <img src={questions[currentQIndex].image_url} className="max-h-32 md:max-h-48 mb-6 rounded" />
                     )}
-                    <h3 className="text-4xl font-medium leading-tight">{questions[currentQIndex].question_text}</h3>
+                    <h3 className="text-2xl md:text-4xl font-medium leading-tight">{questions[currentQIndex].question_text}</h3>
                   </Card>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <div className="mt-12 flex justify-between items-center">
-              <Button variant="outline" onClick={() => setSelectedSet(null)}>Change Set</Button>
-              <div className="flex gap-4">
-                <Button variant="ghost" onClick={() => setCurrentQIndex(i => Math.max(0, i - 1))}>Previous</Button>
-                <Button variant="primary" onClick={() => setCurrentQIndex(i => i + 1)}>Next Question</Button>
+            <div className="mt-8 md:mt-12 flex flex-col md:flex-row gap-4 justify-between items-center">
+              <Button 
+                variant="primary" 
+                onClick={() => updateScore(activeTeam.id, 10)} 
+                className="w-full md:w-auto bg-green-500 hover:bg-green-600 text-white shadow-[0_0_15px_rgba(34,197,94,0.4)]"
+              >
+                Correct (+10)
+              </Button>
+              <div className="flex gap-4 w-full md:w-auto">
+                <Button variant="ghost" onClick={() => setCurrentQIndex(i => Math.max(0, i - 1))} className="flex-1 md:flex-none">Previous</Button>
+                <Button variant="primary" onClick={() => setCurrentQIndex(i => i + 1)} className="flex-1 md:flex-none">Next Question</Button>
               </div>
             </div>
           </div>
@@ -1234,8 +1279,8 @@ const Admin = () => {
         </Button>
       </header>
 
-      <div className="flex-1 flex">
-        <nav className="w-64 glass border-r border-white/10 p-4 space-y-2">
+      <div className="flex-1 flex flex-col md:flex-row">
+        <nav className="w-full md:w-64 glass border-b md:border-b-0 md:border-r border-white/10 p-4 flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible">
           {[
             { id: 'teams', icon: Users, label: 'Teams' },
             { id: 'r1-mystery', icon: Box, label: 'Round 1 Mystery' },
@@ -1247,18 +1292,18 @@ const Admin = () => {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+                "flex-shrink-0 md:w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
                 activeTab === tab.id ? "bg-neon-yellow/10 text-neon-yellow" : "hover:bg-white/5 text-white/50"
               )}
             >
-              <tab.icon size={18} /> {tab.label}
+              <tab.icon size={18} /> <span className="whitespace-nowrap">{tab.label}</span>
             </button>
           ))}
         </nav>
 
-        <main className="flex-1 p-8 overflow-y-auto">
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           {status && (
-            <div className="grid grid-cols-5 gap-4 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4 mb-8">
               {[
                 { label: 'Teams', value: status.teams?.count || 0 },
                 { label: 'R1 Mystery', value: status.r1MysteryQuestions?.count || 0 },
@@ -1266,9 +1311,9 @@ const Admin = () => {
                 { label: 'R3 Sets', value: status.r3Sets?.count || 0 },
                 { label: 'R3 Qs', value: status.r3Questions?.count || 0 }
               ].map(stat => (
-                <div key={stat.label} className="glass p-4 rounded-xl text-center">
-                  <p className="text-xs uppercase tracking-widest text-white/30 mb-1">{stat.label}</p>
-                  <p className="text-2xl font-display font-bold text-neon-yellow">{stat.value}</p>
+                <div key={stat.label} className="glass p-3 md:p-4 rounded-xl text-center">
+                  <p className="text-[10px] uppercase tracking-widest text-white/30 mb-1">{stat.label}</p>
+                  <p className="text-lg md:text-2xl font-display font-bold text-neon-yellow">{stat.value}</p>
                 </div>
               ))}
             </div>
@@ -1367,7 +1412,7 @@ const TeamManager = ({ teams, onUpdate }: any) => {
 const Round1MysteryBoxManager = ({ onUpdate }: any) => {
   const [questions, setQuestions] = useState<any[]>([]);
   const [showAdd, setShowAdd] = useState(false);
-  const [newQ, setNewQ] = useState({ box_number: 1, difficulty: 'Easy', question_text: '' });
+  const [newQ, setNewQ] = useState({ box_number: 1, difficulty: 'Easy', question_text: '', correct_answer: '' });
 
   const fetchQuestions = async () => {
     const res = await fetch('/api/round1/mystery-box/questions');
@@ -1390,7 +1435,7 @@ const Round1MysteryBoxManager = ({ onUpdate }: any) => {
     });
     if (res.ok) {
       setShowAdd(false);
-      setNewQ({ box_number: questions.length + 2, difficulty: 'Easy', question_text: '' });
+      setNewQ({ box_number: questions.length + 2, difficulty: 'Easy', question_text: '', correct_answer: '' });
       fetchQuestions();
       onUpdate();
     }
@@ -1431,7 +1476,14 @@ const Round1MysteryBoxManager = ({ onUpdate }: any) => {
               </select>
             </div>
           </div>
-          <textarea placeholder="Question Text" className="w-full bg-white/5 border border-white/10 p-2 rounded h-32" value={newQ.question_text} onChange={e => setNewQ({...newQ, question_text: e.target.value})} />
+          <div>
+            <label className="text-xs text-white/40 uppercase tracking-widest mb-2 block">Question Text</label>
+            <textarea placeholder="Question Text" className="w-full bg-white/5 border border-white/10 p-2 rounded h-24" value={newQ.question_text} onChange={e => setNewQ({...newQ, question_text: e.target.value})} />
+          </div>
+          <div>
+            <label className="text-xs text-white/40 uppercase tracking-widest mb-2 block">Correct Answer</label>
+            <input placeholder="Correct Answer" className="w-full bg-white/5 border border-white/10 p-2 rounded" value={newQ.correct_answer} onChange={e => setNewQ({...newQ, correct_answer: e.target.value})} />
+          </div>
           <div className="flex gap-2">
             <Button onClick={handleAdd}>Add</Button>
             <Button variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
@@ -1457,7 +1509,12 @@ const Round1MysteryBoxManager = ({ onUpdate }: any) => {
                     {q.difficulty}
                   </span>
                 </div>
-                <p className="text-sm text-white/80 line-clamp-2">{q.question_text}</p>
+                <p className="text-sm text-white/80 mb-1">{q.question_text}</p>
+                {q.correct_answer && (
+                  <div className="text-[10px] text-neon-yellow uppercase tracking-widest font-bold">
+                    Ans: {q.correct_answer}
+                  </div>
+                )}
               </div>
             </div>
             <button 
@@ -2009,7 +2066,24 @@ export default function App() {
   return (
     <Router>
       <RouteWatcher />
-      <div className="animated-bg" />
+      <div className="animated-bg">
+        <motion.div 
+          animate={{
+            x: [0, 100, 0],
+            y: [0, 50, 0],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="glow-orb bg-neon-cyan top-[-10%] left-[-10%]" 
+        />
+        <motion.div 
+          animate={{
+            x: [0, -100, 0],
+            y: [0, -50, 0],
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          className="glow-orb bg-neon-orange bottom-[-10%] right-[-10%]" 
+        />
+      </div>
       <div className="relative z-10">
         <Routes>
           <Route path="/" element={<Home />} />

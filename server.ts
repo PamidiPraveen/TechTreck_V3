@@ -38,7 +38,8 @@ const teamSchema = new mongoose.Schema({
 const r1QuestionSchema = new mongoose.Schema({
   box_number: { type: Number, unique: true, required: true },
   difficulty: String,
-  question_text: String
+  question_text: String,
+  correct_answer: String
 }, commonSchemaOptions);
 
 const r2QuestionSchema = new mongoose.Schema({
@@ -52,7 +53,8 @@ const r2QuestionSchema = new mongoose.Schema({
 }, commonSchemaOptions);
 
 const r3SetSchema = new mongoose.Schema({
-  name: { type: String, unique: true, required: true }
+  name: { type: String, unique: true, required: true },
+  is_used: { type: Boolean, default: false }
 }, commonSchemaOptions);
 
 const r3QuestionSchema = new mongoose.Schema({
@@ -290,6 +292,7 @@ app.post("/api/quiz/reset", authenticateToken, async (req, res) => {
     is_finished_r1: 0, 
     is_finished_r2: 0 
   });
+  await R3Set.updateMany({}, { is_used: false });
   res.json({ success: true });
 });
 
@@ -305,9 +308,9 @@ app.get("/api/round1/mystery-box/questions", async (req, res) => {
 });
 
 app.post("/api/round1/mystery-box/questions", authenticateToken, async (req, res) => {
-  const { box_number, difficulty, question_text } = req.body;
+  const { box_number, difficulty, question_text, correct_answer } = req.body;
   try {
-    const question = await R1Question.create({ box_number, difficulty, question_text });
+    const question = await R1Question.create({ box_number, difficulty, question_text, correct_answer });
     res.json(question);
   } catch (err: any) {
     res.status(400).json({ error: "Box number already exists" });
@@ -358,6 +361,24 @@ app.post("/api/round3/sets", authenticateToken, async (req, res) => {
     res.json(set);
   } catch (err: any) {
     res.status(400).json({ error: "Set already exists" });
+  }
+});
+
+app.post("/api/round3/sets/:id/use", async (req, res) => {
+  try {
+    await R3Set.findByIdAndUpdate(req.params.id, { is_used: true });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/round3/sets/reset", authenticateToken, async (req, res) => {
+  try {
+    await R3Set.updateMany({}, { is_used: false });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 
