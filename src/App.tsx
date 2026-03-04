@@ -247,7 +247,7 @@ const Round1 = () => {
     let timer: any;
     if (showQuestion && timeLeft > 0 && !isAnswering) {
       timer = setInterval(() => {
-        playSound('/tiktok1.mp3');
+        //playSound('/tiktok1.mp3');
         setTimeLeft(t => t - 1);
       }, 1000);
     } else if (timeLeft === 0 && showQuestion && !isAnswering) {
@@ -530,7 +530,7 @@ const Round2 = () => {
   useEffect(() => {
     if (isRoundStarted && isTurnStarted && timeLeft > 0 && !isAnswering && !showLeaderboard) {
       const timer = setTimeout(() => {
-        playSound('/tiktok1.mp3');
+        //playSound('/tiktok1.mp3');
         setTimeLeft(timeLeft - 1);
       }, 1000);
       return () => clearTimeout(timer);
@@ -810,7 +810,7 @@ const Round3 = () => {
     let interval: any;
     if (isActive && timer > 0) {
       interval = setInterval(() => {
-        playSound('/tiktok1.mp3');
+        //playSound('/tiktok1.mp3');
         setTimer(t => t - 1);
       }, 1000);
     } else if (timer === 0 && isActive) {
