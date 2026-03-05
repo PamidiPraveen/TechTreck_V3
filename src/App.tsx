@@ -475,12 +475,12 @@ const Round1 = () => {
                   <div className={cn("w-16 h-16 md:w-24 md:h-24 rounded-full border-2 md:border-4 flex items-center justify-center text-2xl md:text-4xl font-display", timeLeft < 10 ? "border-red-500 text-red-500 animate-pulse" : "border-neon-yellow text-neon-yellow")}>{timeLeft}</div>
                 </div>
                 
-                <h2 className="text-3xl md:text-6xl font-medium leading-tight text-white">{activeQuestion.question_text}</h2>
+                <h2 className="text-3xl md:text-6xl font-mono font-medium leading-tight text-white whitespace-pre-wrap">{activeQuestion.question_text}</h2>
                 
                 {showCorrectAnswer && activeQuestion.correct_answer && (
                   <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="p-6 bg-white/10 rounded-2xl border border-neon-yellow/30">
                     <div className="text-neon-yellow text-xs uppercase tracking-widest mb-2">Correct Answer</div>
-                    <div className="text-2xl md:text-4xl font-bold text-white">{activeQuestion.correct_answer}</div>
+                    <div className="text-2xl md:text-4xl font-bold text-white whitespace-pre-wrap">{activeQuestion.correct_answer}</div>
                   </motion.div>
                 )}
 
@@ -727,14 +727,14 @@ const Round2 = () => {
               <motion.div key={currentQuestion.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="space-y-8">
                 <Card className="p-6 md:p-10 border-white/10 bg-white/5 backdrop-blur-xl">
                   {currentQuestion.image_url && <img src={currentQuestion.image_url} alt="Question" className="w-full max-h-48 md:max-h-64 object-contain mb-6 md:mb-8 rounded-2xl bg-black/40 p-4" />}
-                  <h3 className="text-xl md:text-3xl font-medium leading-tight text-white">{currentQuestion.question_text}</h3>
+                  <h3 className="text-xl md:text-3xl font-mono font-medium leading-tight text-white whitespace-pre-wrap">{currentQuestion.question_text}</h3>
                 </Card>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   {[1, 2, 3, 4].map(idx => (
                     <button key={idx} disabled={isAnswering} onClick={() => handleAnswer(idx)} className={cn("p-4 md:p-8 rounded-2xl border-2 text-left transition-all relative group overflow-hidden", "border-white/10 bg-white/5 hover:border-neon-cyan/50 hover:bg-neon-cyan/5", isAnswering && currentQuestion.correct_option === idx && "border-green-500 bg-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.2)]", isAnswering && currentQuestion.correct_option !== idx && "opacity-40 grayscale")}>
                       <div className="flex items-center gap-3 md:gap-4">
                         <span className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-white/5 flex items-center justify-center text-neon-cyan font-display text-lg md:text-xl group-hover:bg-neon-cyan group-hover:text-black transition-colors">{String.fromCharCode(64 + idx)}</span>
-                        <span className="text-lg md:text-xl text-white/90">{(currentQuestion as any)[`option${idx}`]}</span>
+                        <span className="text-lg md:text-xl text-white/90 whitespace-pre-wrap">{(currentQuestion as any)[`option${idx}`]}</span>
                       </div>
                     </button>
                   ))}
@@ -1089,7 +1089,7 @@ const Round3 = () => {
                     {questions[currentQIndex].image_url && (
                       <img src={questions[currentQIndex].image_url} className="max-h-32 md:max-h-48 mb-6 rounded" />
                     )}
-                    <h3 className="text-2xl md:text-4xl font-medium leading-tight">{questions[currentQIndex].question_text}</h3>
+                    <h3 className="text-2xl md:text-4xl font-mono font-medium leading-tight whitespace-pre-wrap">{questions[currentQIndex].question_text}</h3>
                   </Card>
                 </motion.div>
               )}
@@ -1478,7 +1478,7 @@ const Round1MysteryBoxManager = ({ onUpdate }: any) => {
           </div>
           <div>
             <label className="text-xs text-white/40 uppercase tracking-widest mb-2 block">Question Text</label>
-            <textarea placeholder="Question Text" className="w-full bg-white/5 border border-white/10 p-2 rounded h-24" value={newQ.question_text} onChange={e => setNewQ({...newQ, question_text: e.target.value})} />
+            <textarea placeholder="Question Text" className="w-full bg-white/5 border border-white/10 p-2 rounded h-24 font-mono" value={newQ.question_text} onChange={e => setNewQ({...newQ, question_text: e.target.value})} />
           </div>
           <div>
             <label className="text-xs text-white/40 uppercase tracking-widest mb-2 block">Correct Answer</label>
@@ -1594,7 +1594,7 @@ const Round2QuestionManager = ({ onUpdate }: any) => {
 
       {showAddQ && (
         <Card className="space-y-4">
-          <textarea placeholder="Question Text" className="w-full bg-white/5 border border-white/10 p-2 rounded" value={newQ.question_text} onChange={e => setNewQ({...newQ, question_text: e.target.value})} />
+          <textarea placeholder="Question Text" className="w-full bg-white/5 border border-white/10 p-2 rounded font-mono" value={newQ.question_text} onChange={e => setNewQ({...newQ, question_text: e.target.value})} />
           <div className="space-y-2">
             <label className="text-xs text-white/40 uppercase tracking-widest">Question Image</label>
             <input id="r2-image-upload" type="file" accept="image/*" className="w-full bg-white/5 border border-white/10 p-2 rounded text-sm" />
@@ -1796,7 +1796,7 @@ const SetManager = ({ type, sets, onUpdate }: any) => {
 
           {showAddQ && (
             <Card className="space-y-4">
-              <textarea placeholder="Question Text" className="w-full bg-white/5 border border-white/10 p-2 rounded" value={newQ.question_text} onChange={e => setNewQ({...newQ, question_text: e.target.value})} />
+              <textarea placeholder="Question Text" className="w-full bg-white/5 border border-white/10 p-2 rounded font-mono" value={newQ.question_text} onChange={e => setNewQ({...newQ, question_text: e.target.value})} />
               <div className="space-y-2">
                 <label className="text-xs text-white/40 uppercase tracking-widest">Question Image</label>
                 <input id="r3-image-upload" type="file" accept="image/*" className="w-full bg-white/5 border border-white/10 p-2 rounded text-sm" />
