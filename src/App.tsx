@@ -1509,7 +1509,7 @@ const Round1MysteryBoxManager = ({ onUpdate }: any) => {
                     {q.difficulty}
                   </span>
                 </div>
-                <p className="text-sm text-white/80 mb-1">{q.question_text}</p>
+                <p className="text-sm text-white/80 mb-1 whitespace-pre-wrap font-mono">{q.question_text}</p>
                 {q.correct_answer && (
                   <div className="text-[10px] text-neon-yellow uppercase tracking-widest font-bold">
                     Ans: {q.correct_answer}
@@ -1631,7 +1631,7 @@ const Round2QuestionManager = ({ onUpdate }: any) => {
           <div key={q.id} className="p-4 glass rounded-lg flex justify-between items-center group">
             <div className="flex gap-4 items-center">
               <span className="text-white/30 font-display">{idx + 1}</span>
-              <p className="truncate max-w-md">{q.question_text}</p>
+              <p className="truncate max-w-md whitespace-pre-wrap font-mono">{q.question_text}</p>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-xs text-neon-yellow uppercase">Correct: {String.fromCharCode(64 + q.correct_option)}</span>
@@ -1835,7 +1835,7 @@ const SetManager = ({ type, sets, onUpdate }: any) => {
               <div key={q.id} className="p-4 glass rounded-lg flex justify-between items-center group">
                 <div className="flex gap-4 items-center">
                   <span className="text-white/30 font-display">{idx + 1}</span>
-                  <p className="truncate max-w-md">{q.question_text}</p>
+                  <p className="truncate max-w-md whitespace-pre-wrap font-mono">{q.question_text}</p>
                 </div>
                 <div className="flex items-center gap-4">
                   {type === 'round2' && <span className="text-xs text-neon-cyan uppercase">Correct: {String.fromCharCode(64 + q.correct_option)}</span>}
